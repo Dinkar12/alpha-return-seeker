@@ -96,6 +96,11 @@ export const loadHistoricalData = async (symbol: string, days = 90): Promise<His
 // Load prediction data for a specific stock
 export const loadPredictionData = async (symbol: string): Promise<PredictionData[]> => {
   try {
+    const response = await fetch(`/data/predictions/${symbol}.csv`);
+    if (!response.ok) {
+      throw new Error(`Failed to load prediction data for ${symbol}: ${response.status}`);
+    }
+    
     const { rows } = await parseCSV(`/data/predictions/${symbol}.csv`);
     
     return rows.map(row => ({

@@ -5,6 +5,7 @@ import {
   Legend, ResponsiveContainer, ReferenceLine 
 } from "recharts";
 import { PredictionData, loadPredictionData } from "../utils/stockData";
+import { ChartLineUp, AlertTriangle } from "lucide-react";
 
 interface PredictionModelProps {
   symbol: string;
@@ -13,15 +14,22 @@ interface PredictionModelProps {
 const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
   const [predictionData, setPredictionData] = useState<PredictionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchPredictionData = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const data = await loadPredictionData(symbol);
-        setPredictionData(data);
+        if (data.length > 0) {
+          setPredictionData(data);
+        } else {
+          setError(`No prediction data available for ${symbol}`);
+        }
       } catch (error) {
         console.error(`Failed to load prediction data for ${symbol}:`, error);
+        setError(`Failed to load prediction data for ${symbol}`);
       } finally {
         setIsLoading(false);
       }
@@ -55,10 +63,11 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
     );
   }
   
-  if (!predictionData.length) {
+  if (error || !predictionData.length) {
     return (
-      <div className="card-dashboard h-[430px] flex items-center justify-center">
-        <p className="text-muted-foreground">No prediction data available for {symbol}</p>
+      <div className="card-dashboard h-[430px] flex flex-col items-center justify-center">
+        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+        <p className="text-muted-foreground">{error || `No prediction data available for ${symbol}`}</p>
       </div>
     );
   }
@@ -66,7 +75,10 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
   return (
     <div className="card-dashboard">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Price Prediction Model</h2>
+        <div className="flex items-center">
+          <ChartLineUp className="h-5 w-5 mr-2 text-primary" />
+          <h2 className="text-lg font-semibold">Price Prediction Model</h2>
+        </div>
         <div className="text-sm">
           <span className={percentChange >= 0 ? "positive-value" : "negative-value"}>
             {percentChange >= 0 ? '▲' : '▼'} {Math.abs(percentChange).toFixed(2)}%

@@ -75,6 +75,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ stocks, onStockSelect }) => {
               key={symbol}
               onClick={() => onStockSelect(symbol)}
               className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md text-sm transition-colors"
+              title={stocks[symbol]?.name || symbol}
             >
               {symbol}
             </button>
