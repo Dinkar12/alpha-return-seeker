@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Financial indicator colors
+				gain: '#22c55e',     // Green for positive values
+				loss: '#ef4444',     // Red for negative values
+				neutral: '#64748b',  // Slate for neutral values
+				chart: {
+					line: '#3b82f6',  // Blue for chart lines
+					grid: '#1e293b',  // Dark blue for chart grid
+					area: 'rgba(59, 130, 246, 0.1)' // Transparent blue for chart areas
 				}
 			},
 			borderRadius: {
