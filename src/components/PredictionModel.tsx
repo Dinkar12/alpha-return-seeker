@@ -5,7 +5,7 @@ import {
   Legend, ResponsiveContainer, ReferenceLine 
 } from "recharts";
 import { PredictionData, loadPredictionData } from "../utils/stockData";
-import { ChartLineUp, AlertTriangle } from "lucide-react";
+import { ChartLine, AlertTriangle } from "lucide-react";
 
 interface PredictionModelProps {
   symbol: string;
@@ -76,7 +76,7 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
     <div className="card-dashboard">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <ChartLineUp className="h-5 w-5 mr-2 text-primary" />
+          <ChartLine className="h-5 w-5 mr-2 text-primary" />
           <h2 className="text-lg font-semibold">Price Prediction Model</h2>
         </div>
         <div className="text-sm">
