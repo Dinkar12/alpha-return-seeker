@@ -33,7 +33,7 @@ export interface PredictionData {
   upperBound: number;
 }
 
-// Default stock symbols
+// Top 10 stock symbols
 export const popularStocks = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "V", "WMT"
 ];
@@ -45,7 +45,10 @@ export const loadStockData = async (): Promise<Record<string, StockData>> => {
   try {
     const { rows } = await parseCSV('/data/stocks.csv');
     
-    rows.forEach(row => {
+    // Filter only the top 10 stocks
+    const topStocks = rows.filter(row => popularStocks.includes(row.symbol));
+    
+    topStocks.forEach(row => {
       const stock: StockData = {
         symbol: row.symbol,
         name: row.name,

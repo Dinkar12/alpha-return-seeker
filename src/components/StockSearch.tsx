@@ -68,9 +68,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ stocks, onStockSelect }) => {
       </form>
 
       <div className="mt-6">
-        <h3 className="text-sm font-medium text-muted-foreground mb-2">Popular Stocks</h3>
+        <h3 className="text-sm font-medium text-muted-foreground mb-2">Top 10 Stocks</h3>
         <div className="flex flex-wrap gap-2">
-          {popularStocks.filter(symbol => stocks[symbol]).slice(0, 8).map((symbol) => (
+          {popularStocks.filter(symbol => stocks[symbol]).map((symbol) => (
             <button
               key={symbol}
               onClick={() => onStockSelect(symbol)}
