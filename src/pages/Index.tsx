@@ -1,32 +1,67 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import StockSearch from "../components/StockSearch";
 import StockInfo from "../components/StockInfo";
 import TechnicalChart from "../components/TechnicalChart";
 import FundamentalMetrics from "../components/FundamentalMetrics";
 import PredictionModel from "../components/PredictionModel";
-import { mockStocks } from "../utils/mockData";
+import { loadStockData, StockData } from "../utils/stockData";
 import { toast } from "@/components/ui/sonner";
 import { ShieldAlert } from "lucide-react";
 
 const Index = () => {
   const [selectedStock, setSelectedStock] = useState("AAPL");
+  const [stocks, setStocks] = useState<Record<string, StockData>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Load stock data on component mount
+  useEffect(() => {
+    const fetchStockData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await loadStockData();
+        setStocks(data);
+      } catch (error) {
+        console.error("Failed to load stock data:", error);
+        toast.error("Failed to load stock data", {
+          description: "Please try refreshing the page.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStockData();
+  }, []);
   
   const handleStockSelect = (symbol: string) => {
-    if (mockStocks[symbol]) {
+    if (stocks[symbol]) {
       setSelectedStock(symbol);
       toast.success(`${symbol} selected`, {
-        description: `Now viewing data for ${mockStocks[symbol].name}`,
+        description: `Now viewing data for ${stocks[symbol].name}`,
       });
     } else {
       toast.error("Stock not found", {
-        description: "The selected stock is not available in our demo data.",
+        description: "The selected stock is not available in our data.",
       });
     }
   };
   
-  const currentStock = mockStocks[selectedStock];
+  const currentStock = stocks[selectedStock];
+  
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[80vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading stock data...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
   
   return (
     <DashboardLayout>
@@ -36,7 +71,7 @@ const Index = () => {
           <div>
             <h2 className="text-sm font-medium">Disclaimer</h2>
             <p className="text-xs text-muted-foreground">
-              This is a demo application using simulated data. Do not make investment decisions based on this information.
+              This application uses sample data for demonstration purposes. Do not make investment decisions based on this information.
             </p>
           </div>
         </div>
@@ -44,7 +79,7 @@ const Index = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
         <div className="lg:col-span-1">
-          <StockSearch onStockSelect={handleStockSelect} />
+          <StockSearch stocks={stocks} onStockSelect={handleStockSelect} />
         </div>
         <div className="lg:col-span-3">
           {currentStock && <StockInfo stock={currentStock} />}

@@ -1,10 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Legend, Area, AreaChart 
 } from "recharts";
-import { HistoricalPrice, generateHistoricalData } from "../utils/mockData";
+import { HistoricalPrice, loadHistoricalData } from "../utils/stockData";
 
 interface TechnicalChartProps {
   symbol: string;
@@ -15,6 +15,8 @@ type TimeRange = '1M' | '3M' | '6M' | '1Y' | 'All';
 const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('3M');
   const [showingMA, setShowingMA] = useState(true);
+  const [historicalData, setHistoricalData] = useState<HistoricalPrice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Define days for each time range
   const rangeDays = {
@@ -25,8 +27,22 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
     'All': 365 * 2
   };
   
-  // Get data based on the time range
-  const historicalData = generateHistoricalData(symbol, rangeDays[timeRange]);
+  // Load historical data when symbol or timeRange changes
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await loadHistoricalData(symbol, rangeDays[timeRange]);
+        setHistoricalData(data);
+      } catch (error) {
+        console.error(`Failed to load historical data for ${symbol}:`, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchHistoricalData();
+  }, [symbol, timeRange]);
   
   // Calculate moving averages
   const calculateMA = (data: HistoricalPrice[], period: number) => {
@@ -50,8 +66,8 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
     });
   };
   
-  const ma20Data = calculateMA(historicalData, 20);
-  const ma50Data = calculateMA(historicalData, 50);
+  const ma20Data = historicalData.length ? calculateMA(historicalData, 20) : [];
+  const ma50Data = historicalData.length ? calculateMA(historicalData, 50) : [];
   
   // Custom tooltip formatter
   const formatTooltip = (value: number) => {
@@ -60,14 +76,31 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
   
   // Calculate min and max for y-axis domain
   const prices = historicalData.map(d => d.close);
-  const minPrice = Math.min(...prices) * 0.95;
-  const maxPrice = Math.max(...prices) * 1.05;
+  const minPrice = prices.length ? Math.min(...prices) * 0.95 : 0;
+  const maxPrice = prices.length ? Math.max(...prices) * 1.05 : 0;
   
   // Format dates for x-axis
   const formatXAxis = (tickItem: string) => {
     const date = new Date(tickItem);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
+  
+  if (isLoading) {
+    return (
+      <div className="card-dashboard h-[480px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <span className="ml-2 text-sm text-muted-foreground">Loading chart data...</span>
+      </div>
+    );
+  }
+  
+  if (!historicalData.length) {
+    return (
+      <div className="card-dashboard h-[480px] flex items-center justify-center">
+        <p className="text-muted-foreground">No historical data available for {symbol}</p>
+      </div>
+    );
+  }
   
   return (
     <div className="card-dashboard">
@@ -173,7 +206,7 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
           </button>
         </div>
         <div className="text-xs text-muted-foreground">
-          Data is simulated for demonstration purposes
+          Data is retrieved from CSV files
         </div>
       </div>
     </div>

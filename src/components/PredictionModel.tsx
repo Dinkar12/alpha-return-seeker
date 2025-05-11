@@ -1,33 +1,67 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
   Legend, ResponsiveContainer, ReferenceLine 
 } from "recharts";
-import { generatePredictionData } from "../utils/mockData";
+import { PredictionData, loadPredictionData } from "../utils/stockData";
 
 interface PredictionModelProps {
   symbol: string;
 }
 
 const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
-  const predictionData = generatePredictionData(symbol);
+  const [predictionData, setPredictionData] = useState<PredictionData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchPredictionData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await loadPredictionData(symbol);
+        setPredictionData(data);
+      } catch (error) {
+        console.error(`Failed to load prediction data for ${symbol}:`, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPredictionData();
+  }, [symbol]);
   
   // Find index where actual data ends and predictions begin
   const actualDataEndIndex = predictionData.findIndex(item => item.actual === undefined);
-  const dateDivider = actualDataEndIndex !== -1 ? predictionData[actualDataEndIndex].date : null;
+  const dateDivider = actualDataEndIndex !== -1 ? predictionData[actualDataEndIndex]?.date : null;
   
   // Calculate prediction metrics
   const lastActualPrice = predictionData[actualDataEndIndex - 1]?.actual || 0;
   const lastPredictedPrice = predictionData[predictionData.length - 1]?.predicted || 0;
   const priceChange = lastPredictedPrice - lastActualPrice;
-  const percentChange = (priceChange / lastActualPrice) * 100;
+  const percentChange = lastActualPrice ? (priceChange / lastActualPrice) * 100 : 0;
   
   // Format dates for x-axis
   const formatXAxis = (tickItem: string) => {
     const date = new Date(tickItem);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
+  
+  if (isLoading) {
+    return (
+      <div className="card-dashboard h-[430px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <span className="ml-2 text-sm text-muted-foreground">Loading prediction data...</span>
+      </div>
+    );
+  }
+  
+  if (!predictionData.length) {
+    return (
+      <div className="card-dashboard h-[430px] flex items-center justify-center">
+        <p className="text-muted-foreground">No prediction data available for {symbol}</p>
+      </div>
+    );
+  }
   
   return (
     <div className="card-dashboard">
@@ -156,7 +190,7 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
       </div>
       
       <div className="mt-6 text-xs text-muted-foreground">
-        <p>This model uses simulated data for demonstration purposes only. In a real application, machine learning algorithms would analyze fundamental metrics, technical indicators, and market sentiment to generate these predictions.</p>
+        <p>This model uses data from CSV files. In a real application, machine learning algorithms would analyze fundamental metrics, technical indicators, and market sentiment to generate these predictions.</p>
       </div>
     </div>
   );

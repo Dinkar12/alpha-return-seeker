@@ -1,7 +1,7 @@
 
 import React from "react";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
-import { StockData, formatLargeNumber, formatPercentage } from "../utils/mockData";
+import { StockData, formatLargeNumber, formatPercentage } from "../utils/stockData";
 
 interface StockInfoProps {
   stock: StockData;

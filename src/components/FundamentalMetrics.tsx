@@ -1,6 +1,6 @@
 
 import React from "react";
-import { StockData, formatPercentage } from "../utils/mockData";
+import { StockData, formatPercentage } from "../utils/stockData";
 
 interface FundamentalMetricsProps {
   stock: StockData;

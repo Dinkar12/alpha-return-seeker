@@ -1,26 +1,27 @@
 
 import React, { useState } from "react";
 import { Search } from "lucide-react";
-import { popularStocks, mockStocks } from "../utils/mockData";
+import { popularStocks, StockData } from "../utils/stockData";
 
 interface StockSearchProps {
+  stocks: Record<string, StockData>;
   onStockSelect: (symbol: string) => void;
 }
 
-const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
+const StockSearch: React.FC<StockSearchProps> = ({ stocks, onStockSelect }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim() && mockStocks[searchQuery.toUpperCase()]) {
+    if (searchQuery.trim() && stocks[searchQuery.toUpperCase()]) {
       onStockSelect(searchQuery.toUpperCase());
       setSearchQuery("");
     }
   };
 
   const filteredStocks = searchQuery 
-    ? Object.values(mockStocks).filter(stock => 
+    ? Object.values(stocks).filter(stock => 
         stock.symbol.toUpperCase().includes(searchQuery.toUpperCase()) || 
         stock.name.toUpperCase().includes(searchQuery.toUpperCase())
       ).slice(0, 5)
@@ -69,7 +70,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
       <div className="mt-6">
         <h3 className="text-sm font-medium text-muted-foreground mb-2">Popular Stocks</h3>
         <div className="flex flex-wrap gap-2">
-          {popularStocks.slice(0, 8).map((symbol) => (
+          {popularStocks.filter(symbol => stocks[symbol]).slice(0, 8).map((symbol) => (
             <button
               key={symbol}
               onClick={() => onStockSelect(symbol)}
