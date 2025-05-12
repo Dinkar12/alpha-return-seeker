@@ -22,17 +22,22 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
       setError(null);
       try {
         const data = await loadPredictionData(symbol);
-        if (data.length > 0) {
-          // Reverse the data to show oldest first
-          const sortedData = [...data].reverse();
+        if (data.length > 0 && data[0].date) {
+          // Sort data to ensure chronological order (oldest first)
+          const sortedData = [...data].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
           console.log(`Loaded ${data.length} prediction records for ${symbol}`, data);
           setPredictionData(sortedData);
         } else {
+          console.error(`No valid prediction data available for ${symbol}`);
+          setPredictionData([]);
           setError(`No prediction data available for ${symbol}`);
         }
       } catch (error) {
         console.error(`Failed to load prediction data for ${symbol}:`, error);
         setError(`Failed to load prediction data for ${symbol}`);
+        setPredictionData([]);
       } finally {
         setIsLoading(false);
       }
@@ -45,9 +50,9 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
   const actualDataEndIndex = predictionData.findIndex(item => item.actual === undefined);
   const dateDivider = actualDataEndIndex !== -1 ? predictionData[actualDataEndIndex]?.date : null;
   
-  // Calculate prediction metrics
-  const lastActualPrice = predictionData[actualDataEndIndex - 1]?.actual || 0;
-  const lastPredictedPrice = predictionData[predictionData.length - 1]?.predicted || 0;
+  // Calculate prediction metrics only if we have valid data
+  const lastActualPrice = actualDataEndIndex > 0 ? predictionData[actualDataEndIndex - 1]?.actual || 0 : 0;
+  const lastPredictedPrice = predictionData.length ? predictionData[predictionData.length - 1]?.predicted || 0 : 0;
   const priceChange = lastPredictedPrice - lastActualPrice;
   const percentChange = lastActualPrice ? (priceChange / lastActualPrice) * 100 : 0;
   

@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, Legend, Area, AreaChart 
 } from "recharts";
 import { HistoricalPrice, loadHistoricalData } from "../utils/stockData";
+import { AlertTriangle } from "lucide-react";
 
 interface TechnicalChartProps {
   symbol: string;
@@ -17,6 +18,7 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
   const [showingMA, setShowingMA] = useState(true);
   const [historicalData, setHistoricalData] = useState<HistoricalPrice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Define days for each time range
   const rangeDays = {
@@ -31,13 +33,29 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
   useEffect(() => {
     const fetchHistoricalData = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const data = await loadHistoricalData(symbol, rangeDays[timeRange]);
-        // Reverse the data to show oldest first (for proper chart display)
-        setHistoricalData(data.reverse());
-        console.log(`Loaded ${data.length} historical records for ${symbol}`, data);
+        
+        // Check if data is valid and complete
+        if (data.length > 0 && data[0].date && data[0].close) {
+          // Sort data to ensure chronological order (oldest first)
+          const sortedData = [...data].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          
+          console.log(`Loaded ${sortedData.length} historical records for ${symbol}`, sortedData);
+          setHistoricalData(sortedData);
+          setError(null);
+        } else {
+          console.error(`Invalid or empty historical data for ${symbol}`);
+          setHistoricalData([]);
+          setError(`No valid historical data available for ${symbol}`);
+        }
       } catch (error) {
         console.error(`Failed to load historical data for ${symbol}:`, error);
+        setError(`Failed to load historical data for ${symbol}`);
+        setHistoricalData([]);
       } finally {
         setIsLoading(false);
       }
@@ -96,10 +114,11 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
     );
   }
   
-  if (!historicalData.length) {
+  if (error || !historicalData.length) {
     return (
-      <div className="card-dashboard h-[480px] flex items-center justify-center">
-        <p className="text-muted-foreground">No historical data available for {symbol}</p>
+      <div className="card-dashboard h-[480px] flex items-center justify-center flex-col">
+        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+        <p className="text-muted-foreground">{error || `No historical data available for ${symbol}`}</p>
       </div>
     );
   }

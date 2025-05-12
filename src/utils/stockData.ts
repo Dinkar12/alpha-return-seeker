@@ -79,14 +79,19 @@ export const loadHistoricalData = async (symbol: string, days = 90): Promise<His
   try {
     const { rows } = await parseCSV(`/data/historical/${symbol}.csv`);
     
-    return rows.slice(0, days).map(row => ({
-      date: row.date,
-      open: convertToNumber(row.open),
-      high: convertToNumber(row.high),
-      low: convertToNumber(row.low),
-      close: convertToNumber(row.close),
-      volume: convertToNumber(row.volume),
-    }));
+    const validRows = rows
+      .filter(row => row.date && row.close) // Ensure we have necessary data
+      .slice(0, days)
+      .map(row => ({
+        date: row.date,
+        open: convertToNumber(row.open),
+        high: convertToNumber(row.high),
+        low: convertToNumber(row.low),
+        close: convertToNumber(row.close),
+        volume: convertToNumber(row.volume),
+      }));
+      
+    return validRows;
   } catch (error) {
     console.error(`Error loading historical data for ${symbol}:`, error);
     return [];
@@ -103,13 +108,15 @@ export const loadPredictionData = async (symbol: string): Promise<PredictionData
     
     const { rows } = await parseCSV(`/data/predictions/${symbol}.csv`);
     
-    return rows.map(row => ({
-      date: row.date,
-      actual: row.actual ? convertToNumber(row.actual) : undefined,
-      predicted: convertToNumber(row.predicted),
-      lowerBound: convertToNumber(row.lowerBound),
-      upperBound: convertToNumber(row.upperBound),
-    }));
+    return rows
+      .filter(row => row.date && (row.predicted !== undefined)) // Ensure we have necessary data
+      .map(row => ({
+        date: row.date,
+        actual: row.actual && row.actual !== 'undefined' ? convertToNumber(row.actual) : undefined,
+        predicted: convertToNumber(row.predicted),
+        lowerBound: convertToNumber(row.lowerBound),
+        upperBound: convertToNumber(row.upperBound),
+      }));
   } catch (error) {
     console.error(`Error loading prediction data for ${symbol}:`, error);
     return [];
