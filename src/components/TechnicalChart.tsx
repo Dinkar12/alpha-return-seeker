@@ -33,7 +33,9 @@ const TechnicalChart: React.FC<TechnicalChartProps> = ({ symbol }) => {
       setIsLoading(true);
       try {
         const data = await loadHistoricalData(symbol, rangeDays[timeRange]);
-        setHistoricalData(data);
+        // Reverse the data to show oldest first (for proper chart display)
+        setHistoricalData(data.reverse());
+        console.log(`Loaded ${data.length} historical records for ${symbol}`, data);
       } catch (error) {
         console.error(`Failed to load historical data for ${symbol}:`, error);
       } finally {

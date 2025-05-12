@@ -23,7 +23,10 @@ const PredictionModel: React.FC<PredictionModelProps> = ({ symbol }) => {
       try {
         const data = await loadPredictionData(symbol);
         if (data.length > 0) {
-          setPredictionData(data);
+          // Reverse the data to show oldest first
+          const sortedData = [...data].reverse();
+          console.log(`Loaded ${data.length} prediction records for ${symbol}`, data);
+          setPredictionData(sortedData);
         } else {
           setError(`No prediction data available for ${symbol}`);
         }
