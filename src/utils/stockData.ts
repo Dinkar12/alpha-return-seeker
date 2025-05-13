@@ -41,6 +41,7 @@ export const popularStocks = [
 // Storage for custom uploaded data
 const customHistoricalData: Record<string, HistoricalPrice[]> = {};
 const customPredictionData: Record<string, PredictionData[]> = {};
+const customGenericData: Record<string, any[]> = {};
 
 // Set custom historical data
 export const setCustomHistoricalData = (symbol: string, data: any[]) => {
@@ -77,6 +78,11 @@ export const setCustomPredictionData = (symbol: string, data: any[]) => {
   );
   
   customPredictionData[symbol] = sortedData;
+};
+
+// Set custom generic data
+export const setCustomGenericData = (symbol: string, data: any[]) => {
+  customGenericData[symbol] = data;
 };
 
 // Function to load stock data from CSV

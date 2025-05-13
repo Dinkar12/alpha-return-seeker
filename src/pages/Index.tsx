@@ -53,6 +53,9 @@ const Index = () => {
   const handleDatasetUploaded = () => {
     // Trigger a refresh of the charts
     setRefreshTrigger(prev => prev + 1);
+    toast.success("Dataset applied", {
+      description: "The charts have been updated with your custom data."
+    });
   };
   
   const currentStock = stocks[selectedStock];

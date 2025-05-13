@@ -13,7 +13,7 @@ interface DatasetUploaderProps {
 
 const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUploaded }) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [datasetType, setDatasetType] = useState<'historical' | 'prediction'>('historical');
+  const [datasetType, setDatasetType] = useState<'historical' | 'prediction' | 'any'>('historical');
   
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,7 +41,7 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
             description: "CSV must include date, open, high, low, close, and volume columns"
           });
         }
-      } else {
+      } else if (datasetType === 'prediction') {
         // Process prediction data
         if (isValidPredictionData(parsedData)) {
           setCustomPredictionData(symbol, parsedData);
@@ -53,6 +53,29 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
           toast.error("Invalid prediction data format", {
             description: "CSV must include date, actual/predicted, lowerBound, and upperBound columns"
           });
+        }
+      } else {
+        // Process any CSV data
+        toast.success("CSV file uploaded successfully", {
+          description: `Loaded ${parsedData.length} rows with ${Object.keys(parsedData[0] || {}).length} columns`
+        });
+        
+        // Log the data structure for debugging
+        console.log("Generic CSV data:", parsedData);
+        
+        // Check if data might be historical or prediction format
+        if (isValidHistoricalData(parsedData)) {
+          const useData = confirm("This CSV appears to be historical stock data. Would you like to use it for price charts?");
+          if (useData) {
+            setCustomHistoricalData(symbol, parsedData);
+            onDatasetUploaded();
+          }
+        } else if (isValidPredictionData(parsedData)) {
+          const useData = confirm("This CSV appears to be prediction data. Would you like to use it for prediction models?");
+          if (useData) {
+            setCustomPredictionData(symbol, parsedData);
+            onDatasetUploaded();
+          }
         }
       }
     } catch (error) {
@@ -86,6 +109,10 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
   // Parse CSV string
   const parseCSVString = (csvString: string) => {
     const lines = csvString.split('\n').filter(line => line.trim() !== '');
+    if (lines.length === 0) {
+      throw new Error("CSV file is empty");
+    }
+    
     const headers = lines[0].split(',').map(h => h.trim());
     
     const rows = lines.slice(1).map(line => {
@@ -105,7 +132,7 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
   };
   
   // Validate historical data format
-  const isValidHistoricalData = (data: any[]) => {
+  const isValidHistoricalData = (data: any[]): boolean => {
     if (!data.length) return false;
     
     // Check if required fields exist
@@ -114,7 +141,7 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
   };
   
   // Validate prediction data format
-  const isValidPredictionData = (data: any[]) => {
+  const isValidPredictionData = (data: any[]): boolean => {
     if (!data.length) return false;
     
     // Check if required fields exist
@@ -129,10 +156,10 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
         Upload Custom Dataset
       </h3>
       
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         <button
           onClick={() => setDatasetType('historical')}
-          className={`px-3 py-2 text-sm rounded-md ${
+          className={`px-2 py-2 text-xs rounded-md ${
             datasetType === 'historical' 
               ? 'bg-primary text-primary-foreground' 
               : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -142,13 +169,23 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
         </button>
         <button
           onClick={() => setDatasetType('prediction')}
-          className={`px-3 py-2 text-sm rounded-md ${
+          className={`px-2 py-2 text-xs rounded-md ${
             datasetType === 'prediction' 
               ? 'bg-primary text-primary-foreground' 
               : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
           }`}
         >
           Prediction Data
+        </button>
+        <button
+          onClick={() => setDatasetType('any')}
+          className={`px-2 py-2 text-xs rounded-md ${
+            datasetType === 'any' 
+              ? 'bg-primary text-primary-foreground' 
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          }`}
+        >
+          Any CSV
         </button>
       </div>
       
@@ -164,7 +201,9 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
                 <span className="font-semibold">Click to upload</span> or drag and drop
               </p>
               <p className="text-xs text-muted-foreground">
-                CSV file for {datasetType === 'historical' ? 'historical price data' : 'price predictions'}
+                {datasetType === 'historical' && 'CSV file for historical price data'}
+                {datasetType === 'prediction' && 'CSV file for price predictions'}
+                {datasetType === 'any' && 'Any CSV file'}
               </p>
             </div>
             <Input
@@ -192,11 +231,16 @@ const DatasetUploader: React.FC<DatasetUploaderProps> = ({ symbol, onDatasetUplo
               <br />
               Example: 2025-04-11,185.23,187.67,184.89,187.45,59328000
             </>
-          ) : (
+          ) : datasetType === 'prediction' ? (
             <>
               Upload CSV with columns: date, predicted, lowerBound, upperBound (optional: actual).
               <br />
               Example: 2025-04-12,188.76,186.89,190.63
+            </>
+          ) : (
+            <>
+              Upload any CSV file. If it matches the format for historical or prediction data, 
+              you'll be asked if you want to use it for charts or predictions.
             </>
           )}
         </p>
