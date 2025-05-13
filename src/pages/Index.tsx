@@ -6,6 +6,7 @@ import StockInfo from "../components/StockInfo";
 import TechnicalChart from "../components/TechnicalChart";
 import FundamentalMetrics from "../components/FundamentalMetrics";
 import PredictionModel from "../components/PredictionModel";
+import DatasetUploader from "../components/DatasetUploader";
 import { loadStockData, StockData } from "../utils/stockData";
 import { toast } from "@/components/ui/sonner";
 import { ShieldAlert } from "lucide-react";
@@ -14,6 +15,7 @@ const Index = () => {
   const [selectedStock, setSelectedStock] = useState("AAPL");
   const [stocks, setStocks] = useState<Record<string, StockData>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Load stock data on component mount
   useEffect(() => {
@@ -46,6 +48,11 @@ const Index = () => {
         description: "The selected stock is not available in our data.",
       });
     }
+  };
+  
+  const handleDatasetUploaded = () => {
+    // Trigger a refresh of the charts
+    setRefreshTrigger(prev => prev + 1);
   };
   
   const currentStock = stocks[selectedStock];
@@ -88,15 +95,20 @@ const Index = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="lg:col-span-1">
-          <TechnicalChart symbol={selectedStock} />
+          <TechnicalChart symbol={selectedStock} key={`chart-${selectedStock}-${refreshTrigger}`} />
         </div>
         <div className="lg:col-span-1">
           {currentStock && <FundamentalMetrics stock={currentStock} />}
         </div>
       </div>
       
-      <div className="mb-6">
-        <PredictionModel symbol={selectedStock} />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+        <div className="lg:col-span-3">
+          <PredictionModel symbol={selectedStock} key={`prediction-${selectedStock}-${refreshTrigger}`} />
+        </div>
+        <div className="lg:col-span-1">
+          <DatasetUploader symbol={selectedStock} onDatasetUploaded={handleDatasetUploaded} />
+        </div>
       </div>
     </DashboardLayout>
   );

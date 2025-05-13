@@ -38,6 +38,47 @@ export const popularStocks = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "V", "WMT"
 ];
 
+// Storage for custom uploaded data
+const customHistoricalData: Record<string, HistoricalPrice[]> = {};
+const customPredictionData: Record<string, PredictionData[]> = {};
+
+// Set custom historical data
+export const setCustomHistoricalData = (symbol: string, data: any[]) => {
+  const formattedData: HistoricalPrice[] = data.map(row => ({
+    date: String(row.date),
+    open: Number(row.open),
+    high: Number(row.high),
+    low: Number(row.low),
+    close: Number(row.close),
+    volume: Number(row.volume),
+  }));
+  
+  // Sort data chronologically (oldest first)
+  const sortedData = formattedData.sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  customHistoricalData[symbol] = sortedData;
+};
+
+// Set custom prediction data
+export const setCustomPredictionData = (symbol: string, data: any[]) => {
+  const formattedData: PredictionData[] = data.map(row => ({
+    date: String(row.date),
+    actual: row.actual !== undefined ? Number(row.actual) : undefined,
+    predicted: Number(row.predicted),
+    lowerBound: Number(row.lowerBound),
+    upperBound: Number(row.upperBound),
+  }));
+  
+  // Sort data chronologically (oldest first)
+  const sortedData = formattedData.sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  customPredictionData[symbol] = sortedData;
+};
+
 // Function to load stock data from CSV
 export const loadStockData = async (): Promise<Record<string, StockData>> => {
   const stockData: Record<string, StockData> = {};
@@ -76,6 +117,12 @@ export const loadStockData = async (): Promise<Record<string, StockData>> => {
 
 // Load historical data for a specific stock
 export const loadHistoricalData = async (symbol: string, days = 90): Promise<HistoricalPrice[]> => {
+  // Check if we have custom data for this symbol
+  if (customHistoricalData[symbol]) {
+    console.log(`Using custom historical data for ${symbol}:`, customHistoricalData[symbol]);
+    return customHistoricalData[symbol].slice(0, days);
+  }
+  
   try {
     const { rows } = await parseCSV(`/data/historical/${symbol}.csv`);
     
@@ -90,8 +137,13 @@ export const loadHistoricalData = async (symbol: string, days = 90): Promise<His
         close: convertToNumber(row.close),
         volume: convertToNumber(row.volume),
       }));
+    
+    // Sort data chronologically (oldest first)
+    const sortedData = validRows.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
       
-    return validRows;
+    return sortedData;
   } catch (error) {
     console.error(`Error loading historical data for ${symbol}:`, error);
     return [];
@@ -100,6 +152,12 @@ export const loadHistoricalData = async (symbol: string, days = 90): Promise<His
 
 // Load prediction data for a specific stock
 export const loadPredictionData = async (symbol: string): Promise<PredictionData[]> => {
+  // Check if we have custom data for this symbol
+  if (customPredictionData[symbol]) {
+    console.log(`Using custom prediction data for ${symbol}:`, customPredictionData[symbol]);
+    return customPredictionData[symbol];
+  }
+  
   try {
     const response = await fetch(`/data/predictions/${symbol}.csv`);
     if (!response.ok) {
@@ -108,7 +166,7 @@ export const loadPredictionData = async (symbol: string): Promise<PredictionData
     
     const { rows } = await parseCSV(`/data/predictions/${symbol}.csv`);
     
-    return rows
+    const validData = rows
       .filter(row => row.date && (row.predicted !== undefined)) // Ensure we have necessary data
       .map(row => ({
         date: row.date,
@@ -117,6 +175,13 @@ export const loadPredictionData = async (symbol: string): Promise<PredictionData
         lowerBound: convertToNumber(row.lowerBound),
         upperBound: convertToNumber(row.upperBound),
       }));
+    
+    // Sort data chronologically (oldest first)
+    const sortedData = validData.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    return sortedData;
   } catch (error) {
     console.error(`Error loading prediction data for ${symbol}:`, error);
     return [];
